@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Smart Breaker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <style>
+        :root {
+            --bg: #f2f2f7;
+            --surface: #ffffff;
+            --primary: #007aff;
+            --text: #000000;
+            --text-dim: rgba(60, 60, 67, 0.6);
+            --danger: #ff3b30;
+            --success: #34c759;
+            --radius: 14px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", 'Inter', "Segoe UI", sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding-bottom: 40px;
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius);
+        }
+
+        /* --- Login Screen --- */
+        #login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+        }
+
+        #login-screen.fade-out {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .login-box {
+            background: var(--surface);
+            padding: 30px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 360px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+        }
+
+        .login-box h2 {
+            margin-bottom: 24px;
+            text-align: center;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .input-group {
+            margin-bottom: 16px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            margin-bottom: 6px;
+            font-weight: 500;
+            padding-left: 4px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 16px;
+            background: #f2f2f7;
+            border: 1px solid transparent;
+            border-radius: 12px;
+            color: var(--text);
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .input-group input:focus {
+            background: #fff;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-weight: 600;
+            font-size: 1rem;
+            margin-top: 10px;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn:active:not(:disabled) {
+            transform: scale(0.97);
+        }
+
+        /* --- App Header --- */
+        header {
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(242, 242, 247, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        header h1 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .status {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: rgba(255, 59, 48, 0.1);
+            color: var(--danger);
+            transition: all 0.3s ease;
+        }
+
+        .status.online {
+            background: rgba(52, 199, 89, 0.1);
+            color: var(--success);
+        }
+
+        /* --- Main Layout --- */
+        .container {
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 24px 0 8px 12px;
+            font-weight: 600;
+        }
+
+        /* --- Grid (V, I, P, kWh) --- */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .metric-card {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+        }
+
+        .metric-label {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+
+        .metric-val {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .metric-unit {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            font-weight: 500;
+        }
+        
+        /* Overload Progress Bar */
+        .progress-container {
+            width: 100%;
+            height: 4px;
+            background: #e9e9ea;
+            border-radius: 2px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--success);
+            border-radius: 2px;
+            transition: width 0.3s ease-out, background-color 0.3s ease;
+        }
+
+        /* --- Main Relay Card --- */
+        .relay-card {
+            padding: 20px;
+            margin-top: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .relay-info h2 {
+            font-size: 1.2rem;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .relay-info p {
+            font-size: 0.85rem;
+            color: var(--success);
+            font-weight: 500;
+        }
+
+        /* Apple Switch */
+        .toggle {
+            position: relative;
+            display: inline-block;
+            width: 51px;
+            height: 31px;
+        }
+
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #e9e9ea;
+            transition: .3s ease-in-out;
+            border-radius: 31px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 27px;
+            width: 27px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .3s ease-in-out;
+            border-radius: 50%;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.15), 0 1px 1px rgba(0,0,0,0.16), 0 3px 1px rgba(0,0,0,0.1);
+        }
+
+        input:checked+.toggle-slider {
+            background-color: var(--success);
+        }
+
+        input:checked+.toggle-slider:before {
+            transform: translateX(20px);
+        }
+
+        /* --- Settings Rows --- */
+        .settings-group {
+            background: var(--surface);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+
+        .setting-row {
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .setting-row:last-child {
+            border-bottom: none;
+        }
+
+        .setting-info {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .setting-info strong {
+            display: block;
+            font-size: 0.95rem;
+            margin-bottom: 2px;
+            font-weight: 500;
+        }
+
+        .setting-info span {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        .setting-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .setting-input {
+            width: 65px;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            background: #f2f2f7;
+            color: var(--text);
+            text-align: center;
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+        
+        .setting-input:focus {
+            background: #fff;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.15);
+        }
+        
+        .setting-input:disabled {
+            opacity: 0.4;
+            background: #f2f2f7;
+            cursor: not-allowed;
+        }
+
+        .btn-small {
+            padding: 8px 14px;
+            background: #f2f2f7;
+            border: none;
+            border-radius: 8px;
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-small:active:not(:disabled) {
+            background: #e5e5ea;
+        }
+        
+        .btn-small:disabled {
+            color: var(--text-dim);
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .btn-danger {
+            color: var(--danger);
+            background: rgba(255, 59, 48, 0.1);
+        }
+        
+        .btn-danger:active:not(:disabled) {
+            background: rgba(255, 59, 48, 0.15);
+        }
+
+        /* Mode Selector */
+        .segment-control {
+            display: flex;
+            background: #f2f2f7;
+            border-radius: 8px;
+            padding: 2px;
+        }
+
+        .segment-btn {
+            padding: 6px 14px;
+            border: none;
+            background: transparent;
+            color: var(--text-dim);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .segment-btn.active {
+            background: #fff;
+            color: var(--text);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .segment-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        /* V-Guard specific */
+        .vguard-inputs {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .vguard-inputs input {
+            width: 55px;
+        }
+        
+        .vguard-inputs span {
+            color: var(--text-dim);
+            font-weight: 500;
+        }
+
+        /* Message banner */
+        #relay-warning {
+            background: rgba(255, 149, 0, 0.1);
+            color: #d97700;
+            padding: 12px 16px;
+            border-radius: var(--radius);
+            margin-top: 16px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: none;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Login -->
+    <div id="login-screen">
+        <div class="login-box">
+            <h2>Smart Breaker</h2>
+            <div class="input-group">
+                <label>Username</label>
+                <input type="text" id="mq-user" value="esp32_board">
+            </div>
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" id="mq-pass">
+            </div>
+            <div class="input-group">
+                <label>Topic Prefix</label>
+                <input type="text" id="mq-topic" value="breaker/change-me-a1b2c3">
+            </div>
+            <button class="btn" onclick="connect()" id="btn-conn">Connect</button>
+            <div id="conn-err" style="color:var(--danger); font-size:0.9rem; text-align:center; margin-top:15px; display:none; padding:10px; background:rgba(255,59,48,0.1); border-radius:8px;"></div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header>
+        <h1>Smart Breaker</h1>
+        <div class="status" id="ui-status">Offline</div>
+    </header>
+
+    <div class="container">
+
+        <!-- Metrics -->
+        <div class="metrics-grid">
+            <div class="metric-card card">
+                <div class="metric-label">Voltage</div>
+                <div class="metric-val" id="ui-v">0.0 <span class="metric-unit">V</span></div>
+            </div>
+            <div class="metric-card card">
+                <div class="metric-label">Current</div>
+                <div class="metric-val" id="ui-i">0.00 <span class="metric-unit">A</span></div>
+                <!-- Overload Progress Bar -->
+                <div class="progress-container">
+                    <div class="progress-fill" id="ui-i-bar"></div>
+                </div>
+            </div>
+            <div class="metric-card card">
+                <div class="metric-label">Power</div>
+                <div class="metric-val" id="ui-p">0.0 <span class="metric-unit">W</span></div>
+            </div>
+            <div class="metric-card card">
+                <div class="metric-label">Energy</div>
+                <div class="metric-val" id="ui-kwh">0.000 <span class="metric-unit">kWh</span></div>
+            </div>
+        </div>
+
+        <!-- Main Relay -->
+        <div class="relay-card card">
+            <div class="relay-info">
+                <h2>Main Power</h2>
+                <p id="ui-error">System Normal</p>
+            </div>
+            <label class="toggle">
+                <input type="checkbox" id="ui-relay" onchange="toggleRelay()">
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
+        
+        <div id="relay-warning">Please turn off Main Power to change settings.</div>
+
+        <!-- Control Settings -->
+        <div class="section-title">Control Settings</div>
+
+        <div class="settings-group">
+            <div class="setting-row">
+                <div class="setting-info">
+                    <strong>Run Mode</strong>
+                    <span>Continuous or Timer</span>
+                </div>
+                <div class="segment-control">
+                    <button class="segment-btn active btn-set" id="btn-mode-cont" onclick="setMode('cont')">Cont.</button>
+                    <button class="segment-btn btn-set" id="btn-mode-timer" onclick="setMode('timer')">Timer</button>
+                </div>
+            </div>
+
+            <div class="setting-row">
+                <div class="setting-info">
+                    <strong>Timer Duration</strong>
+                    <span id="ui-timer-status">Current: -- Min</span>
+                </div>
+                <div class="setting-controls">
+                    <input type="number" class="setting-input" id="inp-timer" placeholder="Min">
+                    <button class="btn-small btn-set" onclick="sendValue('set_timer', 'inp-timer')">Set</button>
+                </div>
+            </div>
+
+            <div class="setting-row">
+                <div class="setting-info">
+                    <strong>Overload Limit</strong>
+                    <span id="ui-ol-status">Current: -- A</span>
+                </div>
+                <div class="setting-controls">
+                    <input type="number" class="setting-input" id="inp-ol" placeholder="A" step="0.1">
+                    <button class="btn-small btn-set" onclick="sendValue('set_overload', 'inp-ol')">Set</button>
+                </div>
+            </div>
+
+            <div class="setting-row">
+                <div class="setting-info">
+                    <strong>V-Guard (Min/Max)</strong>
+                    <span id="ui-vg-status">Current: -- / -- V</span>
+                </div>
+                <div class="setting-controls vguard-inputs">
+                    <input type="number" class="setting-input" id="inp-vmin" placeholder="Min">
+                    <span>-</span>
+                    <input type="number" class="setting-input" id="inp-vmax" placeholder="Max">
+                    <button class="btn-small btn-set" onclick="setVGuard()">Set</button>
+                </div>
+            </div>
+
+            <div class="setting-row">
+                <div class="setting-info">
+                    <strong>Unit Price</strong>
+                    <span id="ui-price-status">Current: -- THB</span>
+                </div>
+                <div class="setting-controls">
+                    <input type="number" class="setting-input" id="inp-price" placeholder="THB" step="0.1">
+                    <button class="btn-small btn-set" onclick="sendValue('set_price', 'inp-price')">Set</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-title">System Actions</div>
+
+        <div class="settings-group">
+            <div class="setting-row">
+                <div class="setting-info">
+                    <strong>Reset Fault / Alarm</strong>
+                    <span>Clear error state to turn on</span>
+                </div>
+                <button class="btn-small btn-set" onclick="sendCmd('reset_fault')">Reset</button>
+            </div>
+
+            <div class="setting-row">
+                <div class="setting-info">
+                    <strong>Reset Energy (kWh)</strong>
+                    <span>Clear total power consumption</span>
+                </div>
+                <button class="btn-small btn-danger btn-set" onclick="if(confirm('Are you sure?')) sendCmd('reset_energy')">Reset KWH</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let client = null;
+        let prefix = "";
+        let isRelayUpdating = false;
+        let boardTimeout = null;
+        let currentLimit = 0; // store limit for progress calculation
+        
+        function updateSettingsState(isRelayOn) {
+            const inputs = document.querySelectorAll('.setting-input');
+            const btns = document.querySelectorAll('.btn-set');
+            
+            inputs.forEach(el => el.disabled = isRelayOn);
+            btns.forEach(el => el.disabled = isRelayOn);
+            
+            const warningEl = document.getElementById('relay-warning');
+            if (isRelayOn) {
+                warningEl.style.display = 'block';
+            } else {
+                warningEl.style.display = 'none';
+            }
+        }
+
+        function connect() {
+            const user = document.getElementById('mq-user').value;
+            const pass = document.getElementById('mq-pass').value;
+            prefix = document.getElementById('mq-topic').value;
+
+            const btn = document.getElementById('btn-conn');
+            const err = document.getElementById('conn-err');
+
+            btn.innerText = 'Connecting to Broker...';
+            btn.disabled = true;
+            err.style.display = 'none';
+
+            const host = 'wss://5a04b7d592b04da29240bdd91de025de.s1.eu.hivemq.cloud:8884/mqtt';
+            const clientId = 'ios_' + Math.random().toString(16).substr(2, 8);
+
+            client = mqtt.connect(host, { username: user, password: pass, clientId: clientId });
+
+            client.on('connect', () => {
+                btn.innerText = 'Waiting for Board...';
+                client.subscribe(`${prefix}/telemetry`);
+                client.subscribe(`${prefix}/status`);
+
+                // Timeout to check if board is actually online
+                boardTimeout = setTimeout(() => {
+                    btn.innerText = 'Connect';
+                    btn.disabled = false;
+                    err.innerText = 'Board not responding. Please check if it is powered on and connected to WiFi.';
+                    err.style.display = 'block';
+                    client.end();
+                }, 8000); // 8 seconds timeout
+            });
+
+            client.on('error', (error) => {
+                if (boardTimeout) {
+                    clearTimeout(boardTimeout);
+                    boardTimeout = null;
+                }
+                btn.innerText = 'Connect';
+                btn.disabled = false;
+                err.innerText = 'Connection Failed! Please check your credentials.';
+                err.style.display = 'block';
+                client.end();
+            });
+
+            client.on('offline', () => {
+                document.getElementById('ui-status').textContent = 'Offline';
+                document.getElementById('ui-status').classList.remove('online');
+            });
+
+            client.on('message', (topic, message) => {
+                const payload = message.toString();
+                
+                if (boardTimeout) {
+                    if (topic.endsWith('/status') && payload === 'offline') {
+                        clearTimeout(boardTimeout);
+                        boardTimeout = null;
+                        btn.innerText = 'Connect';
+                        btn.disabled = false;
+                        err.innerText = 'The Board is currently offline. Please check its connection.';
+                        err.style.display = 'block';
+                        client.end();
+                        return;
+                    } else if (topic.endsWith('/telemetry') || (topic.endsWith('/status') && payload === 'online')) {
+                        clearTimeout(boardTimeout);
+                        boardTimeout = null;
+                        
+                        // Proceed to dashboard with animation
+                        document.getElementById('login-screen').classList.add('fade-out');
+                        setTimeout(() => {
+                            document.getElementById('login-screen').style.display = 'none';
+                        }, 400);
+
+                        document.getElementById('ui-status').textContent = 'Online';
+                        document.getElementById('ui-status').classList.add('online');
+                    }
+                }
+
+                if (topic.endsWith('/status')) {
+                    if (payload === 'offline') {
+                        showError("Board Offline", true);
+                        document.getElementById('ui-status').textContent = 'Offline';
+                        document.getElementById('ui-status').classList.remove('online');
+                    } else if (payload === 'online') {
+                        document.getElementById('ui-status').textContent = 'Online';
+                        document.getElementById('ui-status').classList.add('online');
+                    }
+                }
+                else if (topic.endsWith('/telemetry')) {
+                    try {
+                        const d = JSON.parse(payload);
+
+                        updateValueAnim('ui-v', d.v, 1, 'V');
+                        updateValueAnim('ui-p', d.p, 1, 'W');
+                        updateValueAnim('ui-kwh', d.kwh, 3, 'kWh');
+
+                        // Update Limit and Pre-fill Inputs if empty
+                        if (d.limit_a !== undefined) {
+                            currentLimit = d.limit_a;
+                            document.getElementById('ui-ol-status').innerText = `Current: ${d.limit_a} A`;
+                            const inp = document.getElementById('inp-ol');
+                            if (!inp.value && document.activeElement !== inp) inp.value = d.limit_a;
+                        }
+
+                        // Update Current value and Progress Bar
+                        updateValueAnim('ui-i', d.i, 2, 'A');
+                        if (currentLimit > 0 && d.i !== undefined) {
+                            let percent = (d.i / currentLimit) * 100;
+                            if (percent > 100) percent = 100;
+                            
+                            const bar = document.getElementById('ui-i-bar');
+                            bar.style.width = percent + '%';
+                            
+                            // Change color based on how close to limit
+                            if (percent >= 90) {
+                                bar.style.backgroundColor = 'var(--danger)'; // Red
+                            } else if (percent >= 75) {
+                                bar.style.backgroundColor = '#ff9500'; // Orange
+                            } else {
+                                bar.style.backgroundColor = 'var(--success)'; // Green
+                            }
+                        }
+
+                        // Sync Relay
+                        if (!isRelayUpdating) {
+                            document.getElementById('ui-relay').checked = d.relay;
+                            updateSettingsState(d.relay);
+                        }
+
+                        // Update other Settings Texts
+                        if (d.timer_min !== undefined) {
+                            document.getElementById('ui-timer-status').innerText = `Current: ${d.timer_min} Min`;
+                            const inp = document.getElementById('inp-timer');
+                            if (!inp.value && document.activeElement !== inp) inp.value = d.timer_min;
+                        }
+                        if (d.price !== undefined) {
+                            document.getElementById('ui-price-status').innerText = `Current: ${d.price} THB`;
+                            const inp = document.getElementById('inp-price');
+                            if (!inp.value && document.activeElement !== inp) inp.value = d.price;
+                        }
+                        if (d.vmin !== undefined && d.vmax !== undefined) {
+                            document.getElementById('ui-vg-status').innerText = `Current: ${d.vmin} - ${d.vmax} V`;
+                            const inpMin = document.getElementById('inp-vmin');
+                            const inpMax = document.getElementById('inp-vmax');
+                            if (!inpMin.value && document.activeElement !== inpMin) inpMin.value = d.vmin;
+                            if (!inpMax.value && document.activeElement !== inpMax) inpMax.value = d.vmax;
+                        }
+
+                        // Update Mode UI
+                        if (d.mode === 'timer') {
+                            document.getElementById('btn-mode-timer').classList.add('active');
+                            document.getElementById('btn-mode-cont').classList.remove('active');
+                        } else {
+                            document.getElementById('btn-mode-cont').classList.add('active');
+                            document.getElementById('btn-mode-timer').classList.remove('active');
+                        }
+
+                        // Parse Errors
+                        const errors = ["System Normal", "OVERLOAD TRIPPED!", "UNDER-VOLTAGE TRIPPED!", "OVER-VOLTAGE TRIPPED!", "SENSOR ERROR"];
+                        if (d.error > 0) {
+                            showError(errors[d.error] || "Error", true);
+                        } else {
+                            showError(d.mode === "timer" ? `Timer Mode (${d.timer_left}s left)` : "System Normal", false);
+                        }
+
+                    } catch (e) { console.error(e); }
+                }
+            });
+        }
+        
+        function updateValueAnim(id, newValue, toFixedArgs, unit) {
+            const el = document.getElementById(id);
+            const formatted = `${newValue.toFixed(toFixedArgs)} <span class="metric-unit">${unit}</span>`;
+            if (el.innerHTML !== formatted) {
+                el.innerHTML = formatted;
+            }
+        }
+
+        function showError(msg, isErr) {
+            const el = document.getElementById('ui-error');
+            el.textContent = msg;
+            el.style.color = isErr ? 'var(--danger)' : 'var(--success)';
+        }
+
+        // Commands
+        function toggleRelay() {
+            isRelayUpdating = true; // Prevent flicker
+            const isChecked = document.getElementById('ui-relay').checked;
+            updateSettingsState(isChecked); // Optimistic UI update
+            
+            const state = isChecked ? 'on' : 'off';
+            client.publish(`${prefix}/cmd/relay`, state);
+            setTimeout(() => isRelayUpdating = false, 1500); // Release lock after 1.5s
+        }
+
+        function sendCmd(cmd, value = null) {
+            const payload = { cmd: cmd, id: Date.now() };
+            if (value !== null) payload.value = value;
+            client.publish(`${prefix}/cmd`, JSON.stringify(payload));
+        }
+
+        function sendValue(cmd, inputId) {
+            const val = parseFloat(document.getElementById(inputId).value);
+            if (isNaN(val)) return alert("Please enter a valid number");
+            sendCmd(cmd, val);
+            // Intentionally not clearing the input value so it stays
+        }
+
+        function setVGuard() {
+            const vmin = parseFloat(document.getElementById('inp-vmin').value);
+            const vmax = parseFloat(document.getElementById('inp-vmax').value);
+            if (isNaN(vmin) || isNaN(vmax) || vmin >= vmax) return alert("Invalid Min/Max values");
+
+            const payload = { cmd: "set_voltage", min: vmin, max: vmax, id: Date.now() };
+            client.publish(`${prefix}/cmd`, JSON.stringify(payload));
+            // Intentionally not clearing the input values so they stay
+        }
+
+        function setMode(mode) {
+            sendCmd('set_mode', mode);
+            document.getElementById('btn-mode-' + mode).classList.add('active');
+            document.getElementById('btn-mode-' + (mode === 'timer' ? 'cont' : 'timer')).classList.remove('active');
+        }
+    </script>
+</body>
+
+</html>
