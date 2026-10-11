@@ -612,6 +612,10 @@ header.top::before{content:"";position:absolute;z-index:-1;top:0;bottom:0;left:5
           <div class="ctl"><button class="btn danger" type="button" id="btn-energy" data-i18n="sys.energyBtn"></button></div>
         </div>
         <div class="set">
+          <div class="info"><strong data-i18n="sys.notify"></strong><span id="notify-state" data-i18n="sys.notifyD"></span></div>
+          <div class="ctl"><button class="btn ghost" type="button" id="btn-notify" data-i18n="sys.notifyBtn"></button></div>
+        </div>
+        <div class="set">
           <div class="info"><strong data-i18n="sys.refresh"></strong><span data-i18n="sys.refreshD"></span></div>
           <div class="ctl"><button class="btn ghost" type="button" id="btn-refresh" data-i18n="sys.refreshBtn"></button></div>
         </div>
@@ -697,7 +701,7 @@ th: {
   'le.offline':'บอร์ดออฟไลน์อยู่ในขณะนี้','le.lib':'โหลดไลบรารี MQTT ไม่สำเร็จ ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่','le.empty':'กรอกชื่อผู้ใช้ รหัสผ่าน และ topic ให้ครบ',
   'pill.online':'ออนไลน์','pill.offline':'ออฟไลน์','pill.reconnect':'กำลังเชื่อมต่อใหม่','pill.stale':'ข้อมูลไม่อัปเดต',
   'prefs.title':'การตั้งค่าหน้าจอ','prefs.theme':'ธีม','prefs.lang':'ภาษา','prefs.alerts':'แจ้งเตือนเมื่อเกิดปัญหา',
-  'prefs.alertsD':'เสียงและการแจ้งเตือนบนอุปกรณ์ เมื่อไฟถูกตัดหรือโหลดสูง','prefs.data':'ข้อมูลในเครื่องนี้',
+  'prefs.alertsD':'เสียงและการแจ้งเตือนของเบราว์เซอร์ ใช้ได้เฉพาะตอนเปิดหน้านี้ค้างไว้ ถ้าต้องการให้เตือนตอนปิดหน้าเว็บ ให้ตั้ง Telegram หรือ ntfy ที่บอร์ด','prefs.data':'ข้อมูลในเครื่องนี้',
   'prefs.dataD':'ประวัติกราฟ ยอดใช้ไฟรายวัน และงบประมาณ เก็บไว้ในเบราว์เซอร์นี้เท่านั้น','prefs.wipe':'ล้างข้อมูลในเครื่อง','prefs.logout':'ออกจากระบบ',
   'th.marble':'หินอ่อน','th.obsidian':'ออบซิเดียน','th.sapphire':'ไพลิน','th.bordeaux':'บอร์โด','th.porcelain':'พอร์ซเลน',
   'act.save':'บันทึก','act.close':'ปิด','act.cancel':'ยกเลิก',
@@ -724,7 +728,8 @@ th: {
   'banner.lock':'ปิดสวิตช์หลักก่อน จึงจะแก้ค่าได้','banner.remote':'ตัวเครื่องปิดการสั่งงานระยะไกลไว้ จึงแก้ค่าและสั่งเปิดไฟไม่ได้','banner.offline':'บอร์ดออฟไลน์ จึงสั่งงานไม่ได้',
   'sys.title':'การทำงานของระบบ','sys.fault':'รีเซ็ตการแจ้งเตือน','sys.faultD':'ล้างสถานะผิดปกติเพื่อเปิดไฟอีกครั้ง','sys.faultBtn':'รีเซ็ต',
   'sys.energy':'รีเซ็ตค่า kWh','sys.energyD':'ล้างพลังงานสะสมในมิเตอร์เป็นศูนย์','sys.energyBtn':'รีเซ็ต kWh',
-  'sys.refresh':'ขอข้อมูลล่าสุด','sys.refreshD':'ให้บอร์ดส่งค่าปัจจุบันมาทันที','sys.refreshBtn':'รีเฟรช',
+  'sys.refresh':'ขอข้อมูลล่าสุด','sys.refreshD':'ให้บอร์ดส่งค่าปัจจุบันมาทันที','sys.refreshBtn':'รีเฟรช','sys.notify':'แจ้งเตือนเข้ามือถือ','sys.notifyD':'ส่งข้อความทดสอบไปที่ Telegram หรือ ntfy ที่ตั้งไว้ในบอร์ด','sys.notifyOff':'บอร์ดยังไม่ได้ตั้งค่า Telegram หรือ ntfy (ตั้งใน secrets.h)','sys.notifyBtn':'ส่งข้อความทดสอบ',
+  'cmd.test_notify':'ส่งข้อความทดสอบ','res.NOT_CONFIGURED':'บอร์ดยังไม่ได้ตั้งค่าการแจ้งเตือน','tt.testSent':'ส่งข้อความทดสอบแล้ว ตรวจดูที่มือถือ',
   'md.energyT':'รีเซ็ตค่า kWh?','md.energyP':'ค่าพลังงานสะสมในมิเตอร์จะกลับเป็น 0 และย้อนกลับไม่ได้','md.wipeT':'ล้างข้อมูลในเครื่อง?','md.wipeP':'ประวัติกราฟ ยอดรายวัน และงบประมาณในเบราว์เซอร์นี้จะถูกลบ','md.wipeOk':'ล้างข้อมูล','md.energyOk':'รีเซ็ต',
   'log.title':'บันทึกเหตุการณ์','log.clear':'ล้าง','log.empty':'ยังไม่มีเหตุการณ์ เมื่อมีการเปิด-ปิดไฟหรือการแจ้งเตือน จะแสดงที่นี่',
   'lg.connected':'เชื่อมต่อแดชบอร์ดแล้ว','lg.relayOn':'เปิดไฟ','lg.relayOff':'ปิดไฟ','lg.fault':'{e}','lg.faultClear':'ล้างสถานะผิดปกติแล้ว','lg.pending':'กระแสเกินเกณฑ์ กำลังนับถอยหลัง','lg.pendingEnd':'กระแสกลับเข้าเกณฑ์แล้ว',
@@ -744,7 +749,7 @@ en: {
   'le.offline':'The board is offline right now.','le.lib':'Could not load the MQTT library. Check your internet and try again.','le.empty':'Fill in the username, password and topic.',
   'pill.online':'Online','pill.offline':'Offline','pill.reconnect':'Reconnecting','pill.stale':'Data not updating',
   'prefs.title':'Display settings','prefs.theme':'Theme','prefs.lang':'Language','prefs.alerts':'Alert me about problems',
-  'prefs.alertsD':'Sound and a device notification when power trips or load runs high','prefs.data':'Data on this device',
+  'prefs.alertsD':'Browser sound and notifications. They only work while this page stays open. To be alerted with the page closed, set up Telegram or ntfy on the board.','prefs.data':'Data on this device',
   'prefs.dataD':'Chart history, daily usage and budget are stored in this browser only','prefs.wipe':'Clear local data','prefs.logout':'Sign out',
   'th.marble':'Marble','th.obsidian':'Obsidian','th.sapphire':'Sapphire','th.bordeaux':'Bordeaux','th.porcelain':'Porcelain',
   'act.save':'Save','act.close':'Close','act.cancel':'Cancel',
@@ -771,7 +776,8 @@ en: {
   'banner.lock':'Turn the main power off first to change settings.','banner.remote':'Remote control is off on the device, so settings and switching on are locked.','banner.offline':'The board is offline, so nothing can be sent.',
   'sys.title':'System','sys.fault':'Reset alarm','sys.faultD':'Clear the fault so power can be switched on again','sys.faultBtn':'Reset',
   'sys.energy':'Reset kWh','sys.energyD':'Set the meter’s energy total back to zero','sys.energyBtn':'Reset kWh',
-  'sys.refresh':'Request latest values','sys.refreshD':'Ask the board to send its current reading now','sys.refreshBtn':'Refresh',
+  'sys.refresh':'Request latest values','sys.refreshD':'Ask the board to send its current reading now','sys.refreshBtn':'Refresh','sys.notify':'Phone alerts','sys.notifyD':'Send a test message to the Telegram or ntfy set up on the board','sys.notifyOff':'Telegram or ntfy is not set up on the board yet (see secrets.h)','sys.notifyBtn':'Send test message',
+  'cmd.test_notify':'Send test message','res.NOT_CONFIGURED':'Alerts are not set up on the board','tt.testSent':'Test message sent. Check your phone.',
   'md.energyT':'Reset kWh?','md.energyP':'The meter’s energy total goes back to 0 and cannot be restored.','md.wipeT':'Clear local data?','md.wipeP':'Chart history, daily usage and budget in this browser will be deleted.','md.wipeOk':'Clear data','md.energyOk':'Reset',
   'log.title':'Activity','log.clear':'Clear','log.empty':'Nothing yet. Switching power or any alert will show up here.',
   'lg.connected':'Dashboard connected','lg.relayOn':'Power on','lg.relayOff':'Power off','lg.fault':'{e}','lg.faultClear':'Fault cleared','lg.pending':'Current over the limit, countdown started','lg.pendingEnd':'Current back under the limit',
@@ -1367,6 +1373,8 @@ function updateAll() {
   const locked = on, lockAll = !online || remoteBlocked || locked;
   setDisabled('.stepper button, .stepper input, .chip, [data-save], #seg-mode button', lockAll);
   setDisabled('#btn-fault, #btn-energy', !online || remoteBlocked); setDisabled('#btn-refresh', !online);
+  const nOff = !!d && d.notify === false; setDisabled('#btn-notify', !online || nOff);
+  $('#notify-state').textContent = nOff ? t('sys.notifyOff') : t('sys.notifyD');
   $('#btn-fault').classList.toggle('ghost', !err && !(d && d.fault));
   const bn = $('#ctrl-banner'); const msg = !online ? 'banner.offline' : remoteBlocked ? 'banner.remote' : locked ? 'banner.lock' : null;
   bn.hidden = !msg; if (msg) { bn.textContent = t(msg); bn.className = 'banner' + (msg === 'banner.lock' ? '' : ' warn'); }
@@ -1418,7 +1426,8 @@ function onAck(a) {
     keys.forEach(k => $('.stepper[data-key="' + k + '"]').classList.remove('dirty'));
   }
   const r = t('res.' + a.result); const label = t('cmd.' + name);
-  toast(ok ? (isRelay ? label : t('tt.saved')) : r, ok ? 'ok' : 'bad');
+  const okMsg = name === 'test_notify' ? t('tt.testSent') : (isRelay ? label : t('tt.saved'));
+  toast(ok ? okMsg : r, ok ? 'ok' : 'bad');
   addLog(ok ? 'ok' : 'warn', 'lg.cmd', { c: label, r });
 }
 function toggleRelay() {
@@ -1484,6 +1493,7 @@ function init() {
   $$('[data-save]').forEach(b => b.addEventListener('click', () => saveSetting(b.dataset.save, b)));
   $('#btn-fault').addEventListener('click', e => sendCmd('reset_fault', null, e.currentTarget));
   $('#btn-refresh').addEventListener('click', e => { sendCmd('get_status', null, e.currentTarget); setTimeout(() => e.currentTarget.classList.remove('busy'), 1200); });
+  $('#btn-notify').addEventListener('click', e => sendCmd('test_notify', null, e.currentTarget));
   $('#btn-energy').addEventListener('click', async e => { if (await confirmBox(t('md.energyT'), t('md.energyP'), t('md.energyOk'))) sendCmd('reset_energy', null, $('#btn-energy')); });
   $('#btn-logclear').addEventListener('click', () => { LOG = []; renderLog(); });
 
