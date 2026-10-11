@@ -613,7 +613,13 @@ header.top::before{content:"";position:absolute;z-index:-1;top:0;bottom:0;left:5
         </div>
         <div class="set">
           <div class="info"><strong data-i18n="sys.notify"></strong><span id="notify-state" data-i18n="sys.notifyD"></span></div>
-          <div class="ctl"><button class="btn ghost" type="button" id="btn-notify" data-i18n="sys.notifyBtn"></button></div>
+          <div class="ctl" style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn ghost" type="button" id="btn-notify" data-i18n="sys.notifyBtn"></button>
+            <button class="btn ghost" type="button" id="btn-trip-ol" title="จำลองตัดไฟ Overload">ทดสอบ Overload</button>
+            <button class="btn ghost" type="button" id="btn-trip-v" title="จำลองตัดไฟ ไฟตก (จะเริ่มกู้คืนใน 4 วิ)">ทดสอบ ไฟตก</button>
+            <button class="btn ghost" type="button" id="btn-trip-s" title="จำลองตัดไฟ เซ็นเซอร์">ทดสอบ เซ็นเซอร์</button>
+            <button class="btn ghost" type="button" id="btn-skip-rec" title="ข้ามการรอ Recovery 180s เพื่อทดสอบเปิดไฟทันที">ข้ามเวลารอ 180s</button>
+          </div>
         </div>
         <div class="set">
           <div class="info"><strong data-i18n="sys.refresh"></strong><span data-i18n="sys.refreshD"></span></div>
@@ -1426,7 +1432,7 @@ function onAck(a) {
     keys.forEach(k => $('.stepper[data-key="' + k + '"]').classList.remove('dirty'));
   }
   const r = t('res.' + a.result); const label = t('cmd.' + name);
-  const okMsg = name === 'test_notify' ? t('tt.testSent') : (isRelay ? label : t('tt.saved'));
+  const okMsg = name === 'test_notify' ? t('tt.testSent') : name === 'test_trip' ? 'ส่งคำสั่งจำลองการตัดไฟแล้ว' : (isRelay ? label : t('tt.saved'));
   toast(ok ? okMsg : r, ok ? 'ok' : 'bad');
   addLog(ok ? 'ok' : 'warn', 'lg.cmd', { c: label, r });
 }
@@ -1494,6 +1500,10 @@ function init() {
   $('#btn-fault').addEventListener('click', e => sendCmd('reset_fault', null, e.currentTarget));
   $('#btn-refresh').addEventListener('click', e => { sendCmd('get_status', null, e.currentTarget); setTimeout(() => e.currentTarget.classList.remove('busy'), 1200); });
   $('#btn-notify').addEventListener('click', e => sendCmd('test_notify', null, e.currentTarget));
+  $('#btn-trip-ol')?.addEventListener('click', e => sendCmd('test_trip', { type: 'overload' }, e.currentTarget));
+  $('#btn-trip-v')?.addEventListener('click', e => sendCmd('test_trip', { type: 'under_voltage' }, e.currentTarget));
+  $('#btn-trip-s')?.addEventListener('click', e => sendCmd('test_trip', { type: 'sensor' }, e.currentTarget));
+  $('#btn-skip-rec')?.addEventListener('click', e => sendCmd('test_trip', { type: 'skip_recovery' }, e.currentTarget));
   $('#btn-energy').addEventListener('click', async e => { if (await confirmBox(t('md.energyT'), t('md.energyP'), t('md.energyOk'))) sendCmd('reset_energy', null, $('#btn-energy')); });
   $('#btn-logclear').addEventListener('click', () => { LOG = []; renderLog(); });
 
